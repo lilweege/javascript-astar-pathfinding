@@ -172,9 +172,7 @@ random.addEventListener("click", function() {
     changeUnit(end, 4)
     for (let x = 0; x < w; x++) {
       for (let y = 0; y < h; y++) {
-        if (Math.random() < 0.3) {
-          changeUnit(grid[x][y], 0)
-        }
+        if (Math.random() < 0.3) changeUnit(grid[x][y], 0)
       }
     }
   }
@@ -182,7 +180,7 @@ random.addEventListener("click", function() {
 })
 depth.addEventListener("click", function() {
   if (!running && !generating) {
-    console.log('depth first search backtracking maze generation');
+    console.log('depth first search (backtracking)');
     // resize grid if even
     if (w % 2 == 0 || h % 2 == 0) {
       if (w % 2 == 0) {
@@ -203,7 +201,7 @@ depth.addEventListener("click", function() {
     }
     changeUnit(start, 2)
     generating = true
-    dfs(start)
+    dfs()
   }
   else console.log('wait until finished');
 })
@@ -244,114 +242,119 @@ speed.setAttribute('max', '50')
 speed.setAttribute('min', '0')
 speed.setAttribute('value', '20')
 
-async function dfs(current) {
-  let x = current.x
-  let y = current.y
-
+async function dfs() {
+  let stime = Date.now()
+  let current = start
   let neighborsVisited
   let neighbors
-  do {
-    neighborsVisited = 0
-    neighbors = 0
-    if (x - 2 >= 0) {
-      if (grid[x - 2][y].state == 2) { // if left neighbor visited
-        neighborsVisited++
-      }
-      neighbors++
-    }
-    if (y + 2 <= h - 1) {
-      if (grid[x][y + 2].state == 2) { // if bot neighbor visited
-        neighborsVisited++
-      }
-      neighbors++
-    }
-    if (x + 2 <= w - 1) {
-      if (grid[x + 2][y].state == 2) { // if right neighbor visited
-        neighborsVisited++
-      }
-      neighbors++
-    }
-    if (y - 2 >= 0) {
-      if (grid[x][y - 2].state == 2) { // if top neighbor visited
-        neighborsVisited++
-      }
-      neighbors++
-    }
-
-    if (neighborsVisited != neighbors) stack.push(current)
-    else {
-      stack.pop()
-      if (stack.length > 0) {
-        current = stack[stack.length-1]
-        x = current.x
-        y = current.y
-      }
-      else {
-        generating = false
-        changeUnit(start, 3)
-        changeUnit(end, 4)
-        return;
-      }
-    }
-  } while (neighborsVisited == neighbors)
-
+  let x
+  let y
   let intoSelf
   let intoWall
-  do {
-    intoSelf = false
-    intoWall = false
-    dir = Math.floor(Math.random() * 4) + 1
-    switch (dir) {
-      case 1: // up
+
+  while (generating) {
+    x = current.x
+    y = current.y
+
+    do {
+      neighborsVisited = 0
+      neighbors = 0
+      if (x - 2 >= 0) {
+        if (grid[x - 2][y].state == 2) { // if left neighbor visited
+          neighborsVisited++
+        }
+        neighbors++
+      }
+      if (y + 2 <= h - 1) {
+        if (grid[x][y + 2].state == 2) { // if bot neighbor visited
+          neighborsVisited++
+        }
+        neighbors++
+      }
+      if (x + 2 <= w - 1) {
+        if (grid[x + 2][y].state == 2) { // if right neighbor visited
+          neighborsVisited++
+        }
+        neighbors++
+      }
+      if (y - 2 >= 0) {
+        if (grid[x][y - 2].state == 2) { // if top neighbor visited
+          neighborsVisited++
+        }
+        neighbors++
+      }
+      if (neighborsVisited != neighbors) stack.push(current)
+      else {
+        stack.pop()
+        if (stack.length > 0) {
+          current = stack[stack.length-1]
+          x = current.x
+          y = current.y
+        }
+        else {
+          generating = false
+          changeUnit(start, 3)
+          changeUnit(end, 4)
+          console.log('done in ' + (Date.now() - stime) / 1000 + 'seconds');
+          return;
+        }
+      }
+    } while (neighborsVisited == neighbors)
+
+    do {
+      intoSelf = false
+      intoWall = false
+      dir = Math.floor(Math.random() * 4) + 1
+      switch (dir) {
+        case 1: // up
         if (x - 2 < 0) intoWall = true;
         else if (grid[x - 2][y].state == 2) intoSelf = true;
         break;
-      case 2: // right
+        case 2: // right
         if (y + 2 > h - 1) intoWall = true;
         else if (grid[x][y + 2].state == 2) intoSelf = true;
         break;
-      case 3: // down
+        case 3: // down
         if (x + 2 > w - 1) intoWall = true;
         else if (grid[x + 2][y].state == 2) intoSelf = true;
         break;
-      case 4: // left
+        case 4: // left
         if (y - 2 < 0) intoWall = true;
         else if (grid[x][y - 2].state == 2) intoSelf = true;
         break;
+        default: break;
+      }
+    } while(intoWall || intoSelf)
+
+    switch (dir) { // move in new direction
+      case 1: // up
+        changeUnit(grid[x - 2][y], 2)
+        changeUnit(grid[x - 1][y], 2)
+        current = grid[x - 2][y]
+        break;
+      case 2: // right
+        changeUnit(grid[x][y + 2], 2)
+        changeUnit(grid[x][y + 1], 2)
+        current = grid[x][y + 2]
+        break;
+      case 3: // down
+        changeUnit(grid[x + 2][y], 2)
+        changeUnit(grid[x + 1][y], 2)
+        current = grid[x + 2][y]
+        break;
+      case 4: // left
+        changeUnit(grid[x][y - 2], 2)
+        changeUnit(grid[x][y - 1], 2)
+        current = grid[x][y - 2]
+        break;
       default: break;
     }
-  } while(intoWall || intoSelf)
-
-  // move in new direction
-  switch (dir) {
-    case 1: // up
-      changeUnit(grid[x - 2][y], 2)
-      changeUnit(grid[x - 1][y], 2)
-      current = grid[x - 2][y]
-      break;
-    case 2: // right
-      changeUnit(grid[x][y + 2], 2)
-      changeUnit(grid[x][y + 1], 2)
-      current = grid[x][y + 2]
-      break;
-    case 3: // down
-      changeUnit(grid[x + 2][y], 2)
-      changeUnit(grid[x + 1][y], 2)
-      current = grid[x + 2][y]
-      break;
-    case 4: // left
-      changeUnit(grid[x][y - 2], 2)
-      changeUnit(grid[x][y - 1], 2)
-      current = grid[x][y - 2]
-      break;
-    default: break;
+    if (live) {
+      changeColor(end, 4)
+      changeColor(start, 3)
+      await sleep(speed.value)
+    }
   }
-  if (live) {
-    changeColor(end, 4)
-    changeColor(start, 3)
-    await sleep(speed.value)
-  }
-  dfs(current)
 }
 async function astar() {
   let stime = Date.now()
@@ -422,7 +425,7 @@ async function astar() {
         running = false
         run.innerHTML = 'run'
         console.log('done in ' + (Date.now() - stime) / 1000 + 'seconds');
-        break;
+        return;
       }
       openSet.splice(openSet.indexOf(current), 1)
       closedSet.push(current)
